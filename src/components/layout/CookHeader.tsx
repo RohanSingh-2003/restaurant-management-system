@@ -1,0 +1,107 @@
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Menu, Bell, ChevronDown, User, LogOut } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+
+interface CookHeaderProps {
+  onMenuClick: () => void;
+}
+
+export function CookHeader({ onMenuClick }: CookHeaderProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    await logout();
+    navigate('/');
+  };
+
+  return (
+    <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 sm:px-6 bg-white border-b border-neutral-100">
+      {/* Left */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-1.5 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Right */}
+      <div className="flex items-center gap-2">
+        {/* Notifications */}
+        <button
+          onClick={() => navigate('/cook/dashboard?filter=Pending')}
+          className="relative p-2 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 cursor-pointer"
+          aria-label="Notifications"
+          title="New orders notification"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
+        </button>
+
+        {/* Profile dropdown matching Manager Header */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-md hover:bg-neutral-50 transition-colors cursor-pointer"
+            aria-expanded={dropdownOpen}
+            aria-haspopup="true"
+            aria-label="Account menu"
+          >
+            <div className="h-7 w-7 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-medium text-neutral-500">
+              {user?.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-sm font-medium text-neutral-700 leading-none">{user?.name}</p>
+              <p className="text-[11px] text-neutral-400 leading-tight mt-0.5">{user?.email}</p>
+            </div>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-150 ${
+                dropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-1.5 w-48 bg-white border border-neutral-100 rounded-lg shadow-lg shadow-neutral-900/5 py-1 z-50">
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/cook/profile');
+                }}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 cursor-pointer"
+              >
+                <User className="h-4 w-4" />
+                Profile
+              </button>
+              <div className="border-t border-neutral-100 my-1" />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-error hover:bg-error-light/50 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
