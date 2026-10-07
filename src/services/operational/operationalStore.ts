@@ -9,6 +9,7 @@ import type {
   CustomerServiceRequest,
   CreateServiceRequestInput,
 } from '../../types/operational';
+import { appendOrderToDataset, updateOrderInDataset } from '../tarriDataService';
 
 const TABLES_STORAGE_KEY = 'rms_operational_tables';
 const ORDERS_STORAGE_KEY = 'rms_operational_orders';
@@ -400,6 +401,13 @@ export function createOrder(input: CreateOrderInput): OperationalOrder {
   orders.unshift(newOrder);
   saveOrders(orders);
 
+  // Sync with warehouse dataset (tarri_data.csv & analytics)
+  try {
+    void appendOrderToDataset(newOrder);
+  } catch (err) {
+    console.warn('Failed to append order to dataset:', err);
+  }
+
   // Update table to Occupied
   const updatedTables = tables.map((t) =>
     t.id === input.tableId ? { ...t, status: 'Occupied' as const, currentOrderId: orderNumber } : t
@@ -444,6 +452,15 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus): Oper
   orders[orderIdx] = updated;
   saveOrders(orders);
 
+  // If order was cancelled, sync cancellation flag to dataset
+  if (newStatus === 'Cancelled') {
+    try {
+      void updateOrderInDataset(orderId, { cancelled: true });
+    } catch (err) {
+      console.warn('Failed to update dataset order status:', err);
+    }
+  }
+
   return updated;
 }
 
@@ -476,6 +493,13 @@ export function payAndCompleteOrder(
 
   orders[orderIdx] = updatedOrder;
   saveOrders(orders);
+
+  // Sync payment method to dataset
+  try {
+    void updateOrderInDataset(orderId, { payment: method === 'Cash' ? 'Cash' : 'Card' });
+  } catch (err) {
+    console.warn('Failed to update dataset order payment:', err);
+  }
 
   // Table turnover step: mark table as 'Needs Reset' (not automatically Available)
   let updatedTable: RestaurantTable | undefined;
@@ -555,6 +579,14 @@ export function modifyOrder(
 
   orders[orderIdx] = updated;
   saveOrders(orders);
+
+  // Sync modified items and totals to dataset
+  try {
+    void appendOrderToDataset(updated);
+  } catch (err) {
+    console.warn('Failed to update modified order in dataset:', err);
+  }
+
   return updated;
 }
 

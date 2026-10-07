@@ -26,6 +26,7 @@ import type {
   CustomerBehaviourData,
   ProductAnalyticsData,
 } from '../types/dataset';
+import type { OperationalOrder } from '../types/operational';
 
 let cachedRecords: TarriRecord[] | null = null;
 
@@ -96,9 +97,223 @@ export function parseCSV(csvText: string): TarriRecord[] {
   return records;
 }
 
+export const DATASET_EVENT = 'rms_dataset_update';
+export const APPENDED_RECORDS_KEY = 'rms_appended_order_records';
+
+export function subscribeDatasetUpdates(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => callback();
+  window.addEventListener(DATASET_EVENT, handler);
+  window.addEventListener('storage', handler);
+  return () => {
+    window.removeEventListener(DATASET_EVENT, handler);
+    window.removeEventListener('storage', handler);
+  };
+}
+
+export function getAppendedRecords(): TarriRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(APPENDED_RECORDS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed.map((r: any) => ({
+      ...r,
+      date: new Date(r.date),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export function saveAppendedRecords(records: TarriRecord[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(APPENDED_RECORDS_KEY, JSON.stringify(records));
+  }
+}
+
+export function orderToTarriRecords(order: OperationalOrder): TarriRecord[] {
+  const d = new Date(order.createdAt || Date.now());
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayOfWeek = days[d.getDay()];
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+  const orderType = order.tableId || order.tableNumber ? 'Dine-in' : (order.source === 'CUSTOMER' ? 'Collection' : 'Dine-in');
+  const payment = order.payment?.method ? (order.payment.method === 'Cash' ? 'Cash' : 'Card') : 'Card';
+  const cancelled = order.status === 'Cancelled';
+
+  return (order.items || []).map((item) => {
+    const quantity = Number(item.quantity) || 1;
+    const pricePerItem = Number(item.unitPrice) || 0;
+    const grossSales = Math.round(quantity * pricePerItem * 100) / 100;
+    const estCost = Math.round(grossSales * 0.35 * 100) / 100;
+    const estProfit = Math.round((grossSales - estCost) * 100) / 100;
+
+    return {
+      orderId: order.orderNumber || order.id,
+      date: d,
+      dateStr,
+      dayOfWeek,
+      time,
+      category: item.category || 'MAIN COURSES',
+      lineItemName: item.productName || 'MenuItem',
+      quantity,
+      pricePerItem,
+      grossSales,
+      estCost,
+      estProfit,
+      orderType,
+      payment,
+      cancelled,
+    };
+  });
+}
+
+export async function appendOrderToDataset(order: OperationalOrder): Promise<void> {
+  const newRecords = orderToTarriRecords(order);
+  if (newRecords.length === 0) return;
+
+  // 1. Update in-memory cache
+  if (cachedRecords) {
+    cachedRecords = [...newRecords, ...cachedRecords];
+  }
+
+  // 2. Persist in localStorage
+  const existingAppended = getAppendedRecords();
+  const filtered = existingAppended.filter((r) => r.orderId !== (order.orderNumber || order.id));
+  const updatedAppended = [...newRecords, ...filtered];
+  saveAppendedRecords(updatedAppended);
+
+  // 3. Dispatch reactivity event
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(DATASET_EVENT));
+  }
+
+  // 4. Try posting to dev server middleware to append to public/tarri_data.csv on disk
+  try {
+    const csvRows = newRecords
+      .map((r) =>
+        [
+          r.orderId,
+          r.dateStr,
+          r.dayOfWeek,
+          r.time,
+          r.category,
+          r.lineItemName.includes(',') ? `"${r.lineItemName}"` : r.lineItemName,
+          r.quantity,
+          r.pricePerItem,
+          r.grossSales,
+          r.estCost,
+          r.estProfit,
+          r.orderType,
+          r.payment,
+          r.cancelled ? 'Yes' : 'No',
+        ].join(',')
+      )
+      .join('\n');
+
+    await fetch('/api/dataset/append', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csvRows, orderId: order.orderNumber || order.id }),
+    });
+  } catch {
+    // Non-blocking in environments without the dev middleware
+  }
+}
+
+export async function updateOrderInDataset(
+  orderId: string,
+  updates: { cancelled?: boolean; payment?: string }
+): Promise<void> {
+  if (cachedRecords) {
+    cachedRecords = cachedRecords.map((r) => {
+      if (r.orderId === orderId) {
+        return {
+          ...r,
+          cancelled: updates.cancelled !== undefined ? updates.cancelled : r.cancelled,
+          payment: updates.payment !== undefined ? updates.payment : r.payment,
+        };
+      }
+      return r;
+    });
+  }
+
+  const appended = getAppendedRecords();
+  const updatedAppended = appended.map((r) => {
+    if (r.orderId === orderId) {
+      return {
+        ...r,
+        cancelled: updates.cancelled !== undefined ? updates.cancelled : r.cancelled,
+        payment: updates.payment !== undefined ? updates.payment : r.payment,
+      };
+    }
+    return r;
+  });
+  saveAppendedRecords(updatedAppended);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(DATASET_EVENT));
+  }
+
+  try {
+    await fetch('/api/dataset/update-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, ...updates }),
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+
+export function recordsToCSV(records: TarriRecord[]): string {
+  const headers = [
+    'OrderID',
+    'Date',
+    'DayOfWeek',
+    'Time',
+    'Category',
+    'Line item name',
+    'Quantity',
+    'Price Per Item',
+    'Gross Sales',
+    'Est. Cost',
+    'Est. Profit',
+    'OrderType',
+    'Payment',
+    'Cancelled',
+  ];
+
+  const rows = records.map((r) =>
+    [
+      r.orderId,
+      r.dateStr,
+      r.dayOfWeek,
+      r.time,
+      r.category,
+      r.lineItemName.includes(',') ? `"${r.lineItemName.replace(/"/g, '""')}"` : r.lineItemName,
+      r.quantity,
+      r.pricePerItem,
+      r.grossSales,
+      r.estCost,
+      r.estProfit,
+      r.orderType,
+      r.payment,
+      r.cancelled ? 'Yes' : 'No',
+    ].join(',')
+  );
+
+  return [headers.join(','), ...rows].join('\n');
+}
+
 /**
  * Loads the dataset asynchronously from /tarri_data.csv (served statically by Vite).
- * Caches in memory for instant subsequent access.
+ * Caches in memory and combines with any dynamic operational orders.
  */
 export async function loadDataset(forceRefresh = false): Promise<TarriRecord[]> {
   if (!forceRefresh && cachedRecords && cachedRecords.length > 0) {
@@ -111,7 +326,23 @@ export async function loadDataset(forceRefresh = false): Promise<TarriRecord[]> 
   }
 
   const text = await response.text();
-  cachedRecords = parseCSV(text);
+  const base = parseCSV(text);
+  const appended = getAppendedRecords();
+
+  const baseOrderKeys = new Set(
+    base.map((r) => `${r.orderId}_${r.lineItemName}_${r.quantity}_${r.time}`)
+  );
+
+  const merged: TarriRecord[] = [...base];
+  for (const r of appended) {
+    const key = `${r.orderId}_${r.lineItemName}_${r.quantity}_${r.time}`;
+    if (!baseOrderKeys.has(key)) {
+      merged.unshift(r);
+      baseOrderKeys.add(key);
+    }
+  }
+
+  cachedRecords = merged;
   return cachedRecords;
 }
 
@@ -120,6 +351,9 @@ export async function loadDataset(forceRefresh = false): Promise<TarriRecord[]> 
  */
 export function setCustomDataset(records: TarriRecord[]): void {
   cachedRecords = records;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(DATASET_EVENT));
+  }
 }
 
 /**

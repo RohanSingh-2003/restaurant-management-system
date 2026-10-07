@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { OverviewAnalyticsData } from '../types/dataset';
-import { loadDataset, getOverviewAnalytics } from '../services/tarriDataService';
+import { loadDataset, getOverviewAnalytics, subscribeDatasetUpdates } from '../services/tarriDataService';
 
 export function useOverviewAnalytics() {
   const [data, setData] = useState<OverviewAnalyticsData | null>(null);
@@ -25,8 +25,20 @@ export function useOverviewAnalytics() {
         }
       });
 
+    const unsubscribe = subscribeDatasetUpdates(() => {
+      loadDataset(true)
+        .then((records) => {
+          if (isMounted) {
+            const analytics = getOverviewAnalytics(records);
+            setData(analytics);
+          }
+        })
+        .catch(() => {});
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [reloadCounter]);
 
