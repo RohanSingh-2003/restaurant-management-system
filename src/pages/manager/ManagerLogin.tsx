@@ -5,19 +5,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
-export function AdminLogin() {
+export function ManagerLogin() {
   const navigate = useNavigate();
   const { login, isAuthenticated, user } = useAuth();
 
-  const [email, setEmail] = useState('admin@restaurant.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('manager@restaurant.com');
+  const [password, setPassword] = useState('manager123');
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already authenticated
-  if (isAuthenticated && user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
+  if (isAuthenticated && user?.role === 'manager') {
+    return <Navigate to="/manager/dashboard" replace />;
   }
 
   function validate(): boolean {
@@ -40,7 +40,7 @@ export function AdminLogin() {
 
     try {
       await login({ email: email.trim(), password });
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/manager/dashboard', { replace: true });
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : 'Login failed.' });
     } finally {
@@ -64,7 +64,7 @@ export function AdminLogin() {
               </span>
             </div>
             <h2 className="text-2xl font-semibold text-white leading-snug">
-              System Administration &<br />Platform Control
+              Restaurant Management<br />& Business Intelligence
             </h2>
             <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-sm">
               Manage system users, employee staff rosters, product menus, dining tables, operational order states, and system preferences.
@@ -86,7 +86,7 @@ export function AdminLogin() {
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-xl font-semibold text-neutral-800">Admin Login</h1>
+            <h1 className="text-xl font-semibold text-neutral-800">Manager Login</h1>
             <p className="mt-1 text-sm text-neutral-400">
               Sign in to manage system access and operations
             </p>
@@ -102,7 +102,7 @@ export function AdminLogin() {
             <Input
               label="Email / Username"
               type="email"
-              placeholder="admin@restaurant.com"
+              placeholder="manager@restaurant.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
@@ -137,8 +137,8 @@ export function AdminLogin() {
 
           <div className="mt-6 rounded-lg bg-neutral-50 border border-neutral-100 px-4 py-3">
             <p className="text-xs text-neutral-400 mb-1">Demo credentials</p>
-            <p className="text-xs text-neutral-500 font-mono">admin@restaurant.com</p>
-            <p className="text-xs text-neutral-500 font-mono">admin123</p>
+            <p className="text-xs text-neutral-500 font-mono">manager@restaurant.com</p>
+            <p className="text-xs text-neutral-500 font-mono">manager123</p>
           </div>
         </div>
       </div>

@@ -30,7 +30,7 @@ function getStatusBadge(status: OrderStatus) {
   }
 }
 
-export function AdminOrders() {
+export function ManagerOrders() {
   const { orders, updateStatus } = useOperationalData();
 
   const [searchQuery, setSearchQuery] = useState('');

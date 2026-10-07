@@ -75,7 +75,7 @@ export function SettingsPage() {
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono bg-neutral-100 text-neutral-700 px-3 py-1 rounded border border-neutral-200">
-            Role: {user?.role || 'Manager'}
+            Role: {user?.role || 'Admin'}
           </span>
           <span className="text-xs font-mono bg-emerald-50 text-emerald-700 px-3 py-1 rounded border border-emerald-200">
             Status: Operational
@@ -107,16 +107,16 @@ export function SettingsPage() {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-neutral-50">
                 <span className="text-neutral-500">Account Name:</span>
-                <span className="font-semibold text-neutral-800 font-mono">{user?.name || 'Manager'}</span>
+                <span className="font-semibold text-neutral-800 font-mono">{user?.name || 'Admin'}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-neutral-50">
                 <span className="text-neutral-500">Email Address:</span>
-                <span className="font-semibold text-neutral-800 font-mono">{user?.email || 'manager@restaurant.com'}</span>
+                <span className="font-semibold text-neutral-800 font-mono">{user?.email || 'admin@restaurant.com'}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-neutral-50">
                 <span className="text-neutral-500">Assigned Privilege:</span>
                 <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold text-[11px] border border-blue-200">
-                  {user?.role || 'Manager'} (Full Access)
+                  {user?.role || 'Admin'} (Full Access)
                 </span>
               </div>
               <div className="flex justify-between items-center py-1">

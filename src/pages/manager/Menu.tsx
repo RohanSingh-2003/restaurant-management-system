@@ -12,7 +12,7 @@ import { useOperationalData } from '../../hooks/useOperationalData';
 import { Card } from '../../components/ui/Card';
 import type { OperationalProduct } from '../../types/operational';
 
-export function AdminMenu() {
+export function ManagerMenu() {
   const { products, addProduct, updateProduct, toggleProductAvailability } = useOperationalData();
 
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,20 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { RoleSelection } from './pages/RoleSelection';
-import { ManagerLogin } from './pages/auth/ManagerLogin';
-import { ManagerLayout } from './layouts/ManagerLayout';
-import { ManagerDashboard } from './pages/manager/Dashboard';
-import { AnalyticsOverview } from './pages/manager/Overview';
-import { SalesAnalytics } from './pages/manager/Sales';
-import { CustomerAnalytics } from './pages/manager/Customers';
-import { ProductAnalytics } from './pages/manager/Products';
-import { RegressionAnalysis } from './pages/manager/mining/Regression';
-import { ClassificationAnalysis } from './pages/manager/mining/Classification';
-import { ClusteringAnalysis } from './pages/manager/mining/Clustering';
-import { DatasetsPage } from './pages/manager/warehouse/Datasets';
-import { ETLPipelinePage } from './pages/manager/warehouse/ETLPipeline';
-import { OLAPExplorerPage } from './pages/manager/warehouse/OLAPExplorer';
-import { ReportsPage } from './pages/manager/reports/Reports';
-import { ManagerProfile } from './pages/manager/profile/Profile';
+import { AdminLogin } from './pages/auth/AdminLogin';
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminDashboard } from './pages/admin/Dashboard';
+import { AnalyticsOverview } from './pages/admin/Overview';
+import { SalesAnalytics } from './pages/admin/Sales';
+import { CustomerAnalytics } from './pages/admin/Customers';
+import { ProductAnalytics } from './pages/admin/Products';
+import { RegressionAnalysis } from './pages/admin/mining/Regression';
+import { ClassificationAnalysis } from './pages/admin/mining/Classification';
+import { ClusteringAnalysis } from './pages/admin/mining/Clustering';
+import { DatasetsPage } from './pages/admin/warehouse/Datasets';
+import { ETLPipelinePage } from './pages/admin/warehouse/ETLPipeline';
+import { OLAPExplorerPage } from './pages/admin/warehouse/OLAPExplorer';
+import { ReportsPage } from './pages/admin/reports/Reports';
+import { AdminProfile } from './pages/admin/profile/Profile';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 // Waiter module imports
@@ -47,17 +47,17 @@ import { CustomerOrderDetail } from './pages/customer/OrderDetail';
 import { CustomerBills } from './pages/customer/Bills';
 import { CustomerProfile } from './pages/customer/Profile';
 
-// Admin module imports
-import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminLayout } from './layouts/AdminLayout';
-import { AdminDashboard } from './pages/admin/Dashboard';
-import { AdminUsers } from './pages/admin/Users';
-import { AdminStaff } from './pages/admin/Staff';
-import { AdminMenu } from './pages/admin/Menu';
-import { AdminTables } from './pages/admin/Tables';
-import { AdminOrders } from './pages/admin/Orders';
-import { AdminSettings } from './pages/admin/Settings';
-import { AdminProfile } from './pages/admin/Profile';
+// Manager module imports
+import { ManagerLogin } from './pages/manager/ManagerLogin';
+import { ManagerLayout } from './layouts/ManagerLayout';
+import { ManagerDashboard } from './pages/manager/Dashboard';
+import { ManagerUsers } from './pages/manager/Users';
+import { ManagerStaff } from './pages/manager/Staff';
+import { ManagerMenu } from './pages/manager/Menu';
+import { ManagerTables } from './pages/manager/Tables';
+import { ManagerOrders } from './pages/manager/Orders';
+import { ManagerSettings } from './pages/manager/Settings';
+import { ManagerProfile } from './pages/manager/Profile';
 
 export default function App() {
   return (
@@ -71,20 +71,20 @@ export default function App() {
         <Route path="/customer/login" element={<CustomerLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Protected manager routes */}
+        {/* Protected admin routes */}
         <Route
-          path="/manager"
+          path="/admin"
           element={
-            <ProtectedRoute allowedRoles={['manager']}>
-              <ManagerLayout />
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLayout />
             </ProtectedRoute>
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
 
           {/* Analytics */}
-          <Route path="analytics" element={<Navigate to="/manager/analytics/overview" replace />} />
+          <Route path="analytics" element={<Navigate to="/admin/analytics/overview" replace />} />
           <Route path="analytics/overview" element={<AnalyticsOverview />} />
           <Route path="analytics/sales" element={<SalesAnalytics />} />
           <Route path="analytics/customers" element={<CustomerAnalytics />} />
@@ -104,7 +104,7 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
 
           {/* Profile */}
-          <Route path="profile" element={<ManagerProfile />} />
+          <Route path="profile" element={<AdminProfile />} />
         </Route>
 
         {/* Protected waiter routes */}
@@ -163,24 +163,24 @@ export default function App() {
           <Route path="profile" element={<CustomerProfile />} />
         </Route>
 
-        {/* Protected admin routes */}
+        {/* Protected manager routes */}
         <Route
-          path="/admin"
+          path="/manager"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminLayout />
+            <ProtectedRoute allowedRoles={['manager']}>
+              <ManagerLayout />
             </ProtectedRoute>
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="staff" element={<AdminStaff />} />
-          <Route path="menu" element={<AdminMenu />} />
-          <Route path="tables" element={<AdminTables />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="profile" element={<AdminProfile />} />
+          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="users" element={<ManagerUsers />} />
+          <Route path="staff" element={<ManagerStaff />} />
+          <Route path="menu" element={<ManagerMenu />} />
+          <Route path="tables" element={<ManagerTables />} />
+          <Route path="orders" element={<ManagerOrders />} />
+          <Route path="settings" element={<ManagerSettings />} />
+          <Route path="profile" element={<ManagerProfile />} />
         </Route>
 
         {/* Catch-all */}

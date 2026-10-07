@@ -1,18 +1,70 @@
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
+  BarChart3,
+  TrendingUp,
   Users,
-  UserCheck,
-  UtensilsCrossed,
-  LayoutGrid,
-  ShoppingBag,
-  Settings,
+  Package,
+  Activity,
+  GitBranch,
+  Boxes,
+  Database,
+  FileSpreadsheet,
+  Workflow,
+  Box,
+  FileText,
   LogOut,
   ChevronLeft,
   X,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useOperationalData } from '../../hooks/useOperationalData';
+import type { NavGroup } from '../../types';
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Home, BarChart3, TrendingUp, Users, Package, Activity,
+  GitBranch, Boxes, Database, FileSpreadsheet,
+  Workflow, Box, FileText,
+};
+
+const navGroups: NavGroup[] = [
+  {
+    title: 'Main',
+    items: [
+      { label: 'Home', path: '/admin/dashboard', icon: 'Home' },
+    ],
+  },
+  {
+    title: 'Analytics',
+    items: [
+      { label: 'Overview', path: '/admin/analytics/overview', icon: 'BarChart3' },
+      { label: 'Sales', path: '/admin/analytics/sales', icon: 'TrendingUp' },
+      { label: 'Customers', path: '/admin/analytics/customers', icon: 'Users' },
+      { label: 'Products', path: '/admin/analytics/products', icon: 'Package' },
+    ],
+  },
+  {
+    title: 'Data Mining',
+    items: [
+      { label: 'Regression', path: '/admin/mining/regression', icon: 'Activity' },
+      { label: 'Classification', path: '/admin/mining/classification', icon: 'GitBranch' },
+      { label: 'Clustering', path: '/admin/mining/clustering', icon: 'Boxes' },
+    ],
+  },
+  {
+    title: 'Data Warehouse',
+    items: [
+      { label: 'Datasets', path: '/admin/warehouse/datasets', icon: 'Database' },
+      { label: 'ETL Pipeline', path: '/admin/warehouse/etl', icon: 'Workflow' },
+      { label: 'OLAP Explorer', path: '/admin/warehouse/olap', icon: 'Box' },
+    ],
+  },
+  {
+    title: 'Reporting',
+    items: [
+      { label: 'Reports', path: '/admin/reports', icon: 'FileText' },
+    ],
+  },
+];
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -21,61 +73,35 @@ interface AdminSidebarProps {
   onClose: () => void;
 }
 
-interface AdminNavItem {
-  label: string;
-  path: string;
-  icon: typeof Home;
-  badge?: number;
-}
-
-interface AdminNavGroup {
-  title: string;
-  items: AdminNavItem[];
-}
-
 export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }: AdminSidebarProps) {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { orders } = useOperationalData();
-
-  const activeOrdersCount = orders.filter((o) => o.status !== 'Completed' && o.status !== 'Cancelled').length;
-  const currentPath = location.pathname.replace(/\/+$/, '');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  const navGroups: AdminNavGroup[] = [
-    {
-      title: 'Main',
-      items: [
-        { label: 'Home', path: '/admin/dashboard', icon: Home },
-      ],
-    },
-    {
-      title: 'Management',
-      items: [
-        { label: 'Users', path: '/admin/users', icon: Users },
-        { label: 'Staff', path: '/admin/staff', icon: UserCheck },
-        { label: 'Menu', path: '/admin/menu', icon: UtensilsCrossed },
-        { label: 'Tables', path: '/admin/tables', icon: LayoutGrid },
-        { label: 'Orders', path: '/admin/orders', icon: ShoppingBag, badge: activeOrdersCount > 0 ? activeOrdersCount : undefined },
-      ],
-    },
-    {
-      title: 'System',
-      items: [
-        { label: 'Settings', path: '/admin/settings', icon: Settings },
-      ],
-    },
-  ];
+  const currentPath = location.pathname.replace(/\/+$/, '');
+
+  const isItemActive = (itemPath: string) => {
+    const targetPath = itemPath.replace(/\/+$/, '');
+
+    // Overview matches /admin/analytics/overview and alias /admin/analytics
+    if (targetPath === '/admin/analytics/overview') {
+      return currentPath === '/admin/analytics/overview' || currentPath === '/admin/analytics';
+    }
+
+    // Exact equality match for all other routes
+    return currentPath === targetPath;
+  };
 
   const sidebarWidth = isCollapsed ? 'w-[68px]' : 'w-60';
 
   return (
     <>
+      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
@@ -90,7 +116,7 @@ export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }:
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           ${sidebarWidth}
         `}
-        aria-label="Admin navigation"
+        aria-label="Sidebar navigation"
       >
         {/* Header */}
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} h-14 px-4 border-b border-neutral-100 shrink-0`}>
@@ -131,10 +157,8 @@ export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }:
               )}
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const itemPath = item.path.replace(/\/+$/, '');
-                  const isActive = currentPath === itemPath;
-
+                  const Icon = iconMap[item.icon] || Home;
+                  const isActive = isItemActive(item.path);
                   return (
                     <li key={item.path}>
                       <NavLink
@@ -151,17 +175,6 @@ export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }:
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         {!isCollapsed && <span className="truncate">{item.label}</span>}
-                        {!isCollapsed && item.badge !== undefined && (
-                          <span
-                            className={`ml-auto px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-                              isActive
-                                ? 'bg-accent text-white'
-                                : 'bg-neutral-100 text-neutral-600'
-                            }`}
-                          >
-                            {item.badge}
-                          </span>
-                        )}
                       </NavLink>
                     </li>
                   );
@@ -182,7 +195,7 @@ export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }:
               className="flex items-center gap-2.5 px-2 mb-2 w-full text-left rounded-md hover:bg-neutral-50 py-1 transition-colors cursor-pointer"
               title="View Admin Profile"
             >
-              <div className="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-sm font-medium shrink-0">
+              <div className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-sm font-medium text-neutral-500 shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="truncate">
@@ -200,14 +213,14 @@ export function AdminSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose }:
               className="flex items-center justify-center mb-2 w-full p-1 rounded-md hover:bg-neutral-50 transition-colors cursor-pointer"
               title="View Admin Profile"
             >
-              <div className="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-sm font-medium">
+              <div className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-sm font-medium text-neutral-500">
                 {user.name.charAt(0).toUpperCase()}
               </div>
             </button>
           )}
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-2.5 w-full rounded-md px-2.5 py-2 text-sm font-medium text-neutral-500 hover:text-error hover:bg-error-light/50 transition-colors duration-100 cursor-pointer ${isCollapsed ? 'justify-center px-0' : ''}`}
+            className={`flex items-center gap-2.5 w-full rounded-md px-2.5 py-2 text-sm font-medium text-neutral-500 hover:text-error hover:bg-error-light/50 transition-colors duration-100 ${isCollapsed ? 'justify-center px-0' : ''}`}
             title={isCollapsed ? 'Logout' : undefined}
             aria-label="Logout"
           >

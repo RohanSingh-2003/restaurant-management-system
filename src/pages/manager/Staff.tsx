@@ -33,7 +33,7 @@ function getRoleBadge(role: Role) {
   }
 }
 
-export function AdminStaff() {
+export function ManagerStaff() {
   const [users, setUsers] = useState<User[]>(() => getStoredUsers());
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('All');

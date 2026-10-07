@@ -2,15 +2,15 @@ import { useAuth } from '../../../hooks/useAuth';
 import { Card } from '../../../components/ui/Card';
 import { User, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
-export function ManagerProfile() {
+export function AdminProfile() {
   const { user, isAuthenticated } = useAuth();
 
-  const displayName = user?.name || 'Manager';
-  const displayEmail = user?.email || 'manager@restaurant.com';
+  const displayName = user?.name || 'Admin';
+  const displayEmail = user?.email || 'admin@restaurant.com';
   const displayRole = user?.role
     ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-    : 'Manager';
-  const accessLevel = 'Full Manager Access';
+    : 'Admin';
+  const accessLevel = 'Full Admin Access';
   const portalName = 'Restaurant Management System';
   const authStatus = isAuthenticated ? 'Session Verified' : 'Verified';
 
@@ -18,7 +18,7 @@ export function ManagerProfile() {
     <div className="space-y-6 max-w-4xl">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-semibold text-neutral-800 tracking-tight">Manager Profile</h1>
+        <h1 className="text-xl font-semibold text-neutral-800 tracking-tight">Admin Profile</h1>
         <p className="mt-1 text-sm text-neutral-500">
           View your account and role information.
         </p>

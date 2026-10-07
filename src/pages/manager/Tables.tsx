@@ -24,7 +24,7 @@ function getStatusBadge(status: TableStatus) {
   }
 }
 
-export function AdminTables() {
+export function ManagerTables() {
   const { tables, addTable, updateTable, toggleTableStatus } = useOperationalData();
 
   const [searchQuery, setSearchQuery] = useState('');
