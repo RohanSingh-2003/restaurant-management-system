@@ -329,7 +329,27 @@ export function getStoredOrders(): OperationalOrder[] {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(initial));
       return initial;
     }
-    return JSON.parse(raw) as OperationalOrder[];
+    const orders = JSON.parse(raw) as OperationalOrder[];
+    let migrated = false;
+    const cleaned = orders.map((o) => {
+      if (o.orderNumber && !o.orderNumber.startsWith('RES_ORD_')) {
+        const numMatch = String(o.orderNumber).match(/\d+/);
+        const num = numMatch ? parseInt(numMatch[0], 10) : 6325;
+        const newNum = num === 1003 ? 'RES_ORD_6325.0' : `RES_ORD_${num}.0`;
+        migrated = true;
+        return {
+          ...o,
+          id: newNum,
+          orderNumber: newNum,
+        };
+      }
+      return o;
+    });
+
+    if (migrated) {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return createInitialOrders();
   }

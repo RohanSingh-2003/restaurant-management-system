@@ -58,6 +58,7 @@ import { ManagerTables } from './pages/manager/Tables';
 import { ManagerOrders } from './pages/manager/Orders';
 import { ManagerSettings } from './pages/manager/Settings';
 import { ManagerProfile } from './pages/manager/Profile';
+import { ManagerDailySales } from './pages/manager/DailySales';
 
 export default function App() {
   return (
@@ -174,6 +175,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="daily-sales" element={<ManagerDailySales />} />
           <Route path="users" element={<ManagerUsers />} />
           <Route path="staff" element={<ManagerStaff />} />
           <Route path="menu" element={<ManagerMenu />} />

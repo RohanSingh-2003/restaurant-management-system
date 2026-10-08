@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
+  TrendingUp,
   Users,
   UserCheck,
   UtensilsCrossed,
@@ -57,6 +58,7 @@ export function ManagerSidebar({ isOpen, isCollapsed, onToggleCollapse, onClose 
     {
       title: 'Management',
       items: [
+        { label: 'Daily Sales', path: '/manager/daily-sales', icon: TrendingUp },
         { label: 'Users', path: '/manager/users', icon: Users },
         { label: 'Staff', path: '/manager/staff', icon: UserCheck },
         { label: 'Menu', path: '/manager/menu', icon: UtensilsCrossed },

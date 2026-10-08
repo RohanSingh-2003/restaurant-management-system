@@ -117,10 +117,26 @@ export function getAppendedRecords(): TarriRecord[] {
     const raw = localStorage.getItem(APPENDED_RECORDS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return parsed.map((r: any) => ({
-      ...r,
-      date: new Date(r.date),
-    }));
+    let migrated = false;
+    const records = parsed.map((r: any) => {
+      let orderId = r.orderId;
+      if (orderId && !orderId.startsWith('RES_ORD_')) {
+        const numMatch = String(orderId).match(/\d+/);
+        const num = numMatch ? parseInt(numMatch[0], 10) : 6325;
+        orderId = num === 1003 ? 'RES_ORD_6325.0' : `RES_ORD_${num}.0`;
+        migrated = true;
+      }
+      return {
+        ...r,
+        orderId,
+        date: new Date(r.date),
+      };
+    });
+
+    if (migrated) {
+      saveAppendedRecords(records);
+    }
+    return records;
   } catch {
     return [];
   }

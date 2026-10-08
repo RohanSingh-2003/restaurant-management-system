@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UserCheck,
@@ -8,15 +8,37 @@ import {
   ArrowRight,
   ShieldCheck,
   Activity,
+  TrendingUp,
+  TrendingDown,
+  Sparkles,
+  Flame,
+  Calendar,
 } from 'lucide-react';
 import { useOperationalData } from '../../hooks/useOperationalData';
+import { useTarriData } from '../../hooks/useTarriData';
 import { getStoredUsers, subscribeUserUpdates } from '../../services/authService';
+import { getDailySalesAnalysis } from '../../services/managerDailySalesService';
 import { Card } from '../../components/ui/Card';
 
 export function ManagerDashboard() {
   const navigate = useNavigate();
   const { tables, orders, products } = useOperationalData();
+  const { records: tarriRecords } = useTarriData();
   const [users, setUsers] = useState(() => getStoredUsers());
+
+  // Today's date DD/MM/YYYY
+  const todayDateStr = useMemo(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }, []);
+
+  const todayAnalysis = useMemo(() => {
+    if (!tarriRecords || tarriRecords.length === 0) return null;
+    return getDailySalesAnalysis(tarriRecords, todayDateStr);
+  }, [tarriRecords, todayDateStr]);
 
   useEffect(() => {
     const unsub = subscribeUserUpdates(() => {
@@ -135,6 +157,144 @@ export function ManagerDashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Today's Sales & Performance Executive Brief */}
+      {todayAnalysis && (
+        <Card className="p-5 border border-neutral-200 bg-white shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-neutral-900 tracking-tight">
+                    Today's Sales & Benchmark Performance
+                  </h3>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Sync
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  Real-time operational intake compared against historical {todayAnalysis.dayOfWeek} benchmarks.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/manager/daily-sales')}
+              className="px-3 py-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-semibold text-neutral-800 shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            >
+              <Calendar className="h-3.5 w-3.5 text-neutral-500" />
+              Explore Any Date
+              <ArrowRight className="h-3.5 w-3.5 text-neutral-400" />
+            </button>
+          </div>
+
+          {/* 4 Mini Snapshot Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+            <div className="p-3 rounded-lg border border-neutral-100 bg-neutral-50/60">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Today's Sales
+              </span>
+              <div className="text-lg font-bold text-neutral-900 mt-1">
+                £{todayAnalysis.totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-[11px]">
+                {todayAnalysis.revenueVsDayAvgPct >= 0 ? (
+                  <span className="inline-flex items-center font-semibold text-emerald-600">
+                    <TrendingUp className="h-3 w-3 mr-0.5" />
+                    +{todayAnalysis.revenueVsDayAvgPct}%
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center font-semibold text-rose-600">
+                    <TrendingDown className="h-3 w-3 mr-0.5" />
+                    {todayAnalysis.revenueVsDayAvgPct}%
+                  </span>
+                )}
+                <span className="text-neutral-400">vs Thu avg (£{todayAnalysis.dayOfWeekAvgRevenue.toFixed(0)})</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg border border-neutral-100 bg-neutral-50/60">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Orders Today
+              </span>
+              <div className="text-lg font-bold text-neutral-900 mt-1">
+                {todayAnalysis.orderCount} orders
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-[11px]">
+                {todayAnalysis.ordersVsDayAvgPct >= 0 ? (
+                  <span className="inline-flex items-center font-semibold text-emerald-600">
+                    <TrendingUp className="h-3 w-3 mr-0.5" />
+                    +{todayAnalysis.ordersVsDayAvgPct}%
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center font-semibold text-rose-600">
+                    <TrendingDown className="h-3 w-3 mr-0.5" />
+                    {todayAnalysis.ordersVsDayAvgPct}%
+                  </span>
+                )}
+                <span className="text-neutral-400">vs Thu avg ({todayAnalysis.dayOfWeekAvgOrders})</span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg border border-neutral-100 bg-neutral-50/60">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Highest Sold Dish
+              </span>
+              <div className="text-xs font-bold text-neutral-900 mt-1 truncate">
+                {todayAnalysis.topSellersByVolume[0]?.name || 'No sales yet'}
+              </div>
+              <div className="mt-1 text-[11px] text-neutral-500 font-medium">
+                {todayAnalysis.topSellersByVolume[0] ? (
+                  <>
+                    <span className="font-bold text-neutral-800">
+                      {todayAnalysis.topSellersByVolume[0].quantity} portions
+                    </span>{' '}
+                    (£{todayAnalysis.topSellersByVolume[0].revenue.toFixed(2)})
+                  </>
+                ) : (
+                  'Awaiting orders'
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg border border-neutral-100 bg-neutral-50/60">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Top Category
+              </span>
+              <div className="text-xs font-bold text-neutral-900 mt-1 truncate">
+                {todayAnalysis.categoryBreakdown[0]?.category || 'N/A'}
+              </div>
+              <div className="mt-1 text-[11px] text-neutral-500 font-medium">
+                {todayAnalysis.categoryBreakdown[0] ? (
+                  <>
+                    <span className="font-bold text-neutral-800">
+                      {todayAnalysis.categoryBreakdown[0].percentage}%
+                    </span>{' '}
+                    of daily gross
+                  </>
+                ) : (
+                  'N/A'
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Narrative Insight */}
+          <div className="mt-4 p-3 rounded-lg bg-neutral-50 border border-neutral-200/60 text-xs text-neutral-700 leading-relaxed flex items-start gap-2.5">
+            <span className="p-1 rounded-md bg-white border border-neutral-200 text-neutral-600 shrink-0 mt-0.5">
+              <Flame className="h-3.5 w-3.5 text-amber-500" />
+            </span>
+            <p className="text-neutral-700">
+              <span className="font-bold text-neutral-900">Manager Takeaway: </span>
+              {todayAnalysis.narrativeSummary}
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* System Status Banner */}
       <Card className="p-4 border border-neutral-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
