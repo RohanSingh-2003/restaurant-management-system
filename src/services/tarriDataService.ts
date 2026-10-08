@@ -146,6 +146,15 @@ export function orderToTarriRecords(order: OperationalOrder): TarriRecord[] {
   const payment = order.payment?.method ? (order.payment.method === 'Cash' ? 'Cash' : 'Card') : 'Card';
   const cancelled = order.status === 'Cancelled';
 
+  let formattedOrderId = order.orderNumber || order.id;
+  if (!formattedOrderId.startsWith('RES_ORD_')) {
+    const numMatch = formattedOrderId.match(/\d+/);
+    const num = numMatch ? parseInt(numMatch[0], 10) : 6325;
+    formattedOrderId = `RES_ORD_${num}.0`;
+  } else if (!formattedOrderId.endsWith('.0')) {
+    formattedOrderId = `${formattedOrderId}.0`;
+  }
+
   return (order.items || []).map((item) => {
     const quantity = Number(item.quantity) || 1;
     const pricePerItem = Number(item.unitPrice) || 0;
@@ -154,7 +163,7 @@ export function orderToTarriRecords(order: OperationalOrder): TarriRecord[] {
     const estProfit = Math.round((grossSales - estCost) * 100) / 100;
 
     return {
-      orderId: order.orderNumber || order.id,
+      orderId: formattedOrderId,
       date: d,
       dateStr,
       dayOfWeek,

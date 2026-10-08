@@ -73,7 +73,7 @@ function createInitialTables(): RestaurantTable[] {
       number: num,
       capacity,
       status: num === 5 || num === 6 ? 'Occupied' : 'Available',
-      currentOrderId: num === 5 ? 'ORD-1001' : num === 6 ? 'ORD-1002' : undefined,
+      currentOrderId: num === 5 ? 'RES_ORD_6322.0' : num === 6 ? 'RES_ORD_6323.0' : undefined,
     };
   });
 }
@@ -87,8 +87,8 @@ function createInitialOrders(): OperationalOrder[] {
 
   return [
     {
-      id: 'ORD-1001',
-      orderNumber: 'ORD-1001',
+      id: 'RES_ORD_6322.0',
+      orderNumber: 'RES_ORD_6322.0',
       tableId: 'T5',
       tableNumber: 5,
       source: 'WAITER',
@@ -122,8 +122,8 @@ function createInitialOrders(): OperationalOrder[] {
       specialInstructions: 'Customer requested fast service if possible.',
     },
     {
-      id: 'ORD-1002',
-      orderNumber: 'ORD-1002',
+      id: 'RES_ORD_6323.0',
+      orderNumber: 'RES_ORD_6323.0',
       tableId: 'T6',
       tableNumber: 6,
       source: 'WAITER',
@@ -156,8 +156,8 @@ function createInitialOrders(): OperationalOrder[] {
       specialInstructions: 'VIP Table guests.',
     },
     {
-      id: 'ORD-1000',
-      orderNumber: 'ORD-1000',
+      id: 'RES_ORD_6320.0',
+      orderNumber: 'RES_ORD_6320.0',
       tableId: 'T2',
       tableNumber: 2,
       source: 'WAITER',
@@ -354,16 +354,17 @@ export function createOrder(input: CreateOrderInput): OperationalOrder {
   const orders = getStoredOrders();
   const tables = getStoredTables();
 
-  // Find next order number
+  // Find next order number matching dataset sequence (RES_ORD_<number>.0)
+  const BASE_MAX_ORDER_ID = 6325;
   const numericIds = orders
     .map((o) => {
-      const match = o.orderNumber.match(/\d+/);
-      return match ? parseInt(match[0], 10) : 1000;
+      const match = o.orderNumber.match(/RES_ORD_(\d+)/i) || o.orderNumber.match(/\d+/);
+      return match ? parseInt(match[1] || match[0], 10) : BASE_MAX_ORDER_ID;
     })
     .filter((n) => !isNaN(n));
-  const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 1000;
+  const maxId = numericIds.length > 0 ? Math.max(...numericIds, BASE_MAX_ORDER_ID) : BASE_MAX_ORDER_ID;
   const nextNum = maxId + 1;
-  const orderNumber = `ORD-${nextNum}`;
+  const orderNumber = `RES_ORD_${nextNum}.0`;
 
   const subtotal = input.items.reduce((acc, it) => acc + it.quantity * it.unitPrice, 0);
   const nowStr = new Date().toISOString();
