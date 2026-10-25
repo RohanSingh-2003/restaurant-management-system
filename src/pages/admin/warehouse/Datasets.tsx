@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button } from '../../../components/ui';
-import { loadDataset, setCustomDataset, parseCSV } from '../../../services/tarriDataService';
+import { loadDataset, setCustomDataset, parseCSV, subscribeDatasetUpdates, recordsToCSV } from '../../../services/tarriDataService';
 import { calculateDataQuality } from '../../../services/warehouse/etlService';
 import type { TarriRecord, ColumnSchema, DataQualityReport } from '../../../types/dataset';
 
@@ -45,6 +45,16 @@ export function DatasetsPage() {
         console.error('Failed to load dataset', err);
         setIsLoading(false);
       });
+
+    const unsubscribe = subscribeDatasetUpdates(() => {
+      loadDataset(true).then((data) => {
+        setRecords(data);
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Compute Data Quality
@@ -219,6 +229,20 @@ export function DatasetsPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (records.length === 0) return;
+    const csvContent = recordsToCSV(records);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `restaurant_dataset_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-full space-y-6 min-w-0">
       {/* 1. Header */}
@@ -231,6 +255,14 @@ export function DatasetsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            onClick={handleExportCSV}
+            disabled={isLoading || records.length === 0}
+            className="text-xs bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+          >
+            Export CSV
+          </Button>
+
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing || isLoading}

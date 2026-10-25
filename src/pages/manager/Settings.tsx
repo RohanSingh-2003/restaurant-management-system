@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS: AdminSettingsData = {
 
 const SETTINGS_KEY = 'rms_admin_settings';
 
-export function AdminSettings() {
+export function ManagerSettings() {
   const [settings, setSettings] = useState<AdminSettingsData>(() => {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
@@ -257,7 +257,7 @@ export function AdminSettings() {
               <span className="text-[10px] font-semibold uppercase text-neutral-400 block mb-0.5">
                 Active Roles
               </span>
-              <span className="font-semibold text-neutral-800">Manager, Waiter, Cook, Customer, Admin</span>
+              <span className="font-semibold text-neutral-800">Admin, Waiter, Cook, Customer, Manager</span>
             </div>
           </div>
         </Card>

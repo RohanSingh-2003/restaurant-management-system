@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/layout/Sidebar';
-import { Header } from '../components/layout/Header';
+import { ManagerSidebar } from '../components/layout/ManagerSidebar';
+import { ManagerHeader } from '../components/layout/ManagerHeader';
 import { AppLayout } from '../components/layout/AppLayout';
 
 export function ManagerLayout() {
@@ -11,14 +11,14 @@ export function ManagerLayout() {
   return (
     <AppLayout
       sidebar={
-        <Sidebar
+        <ManagerSidebar
           isOpen={sidebarOpen}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
           onClose={() => setSidebarOpen(false)}
         />
       }
-      header={<Header onMenuClick={() => setSidebarOpen(true)} />}
+      header={<ManagerHeader onMenuClick={() => setSidebarOpen(true)} />}
     >
       <Outlet />
     </AppLayout>

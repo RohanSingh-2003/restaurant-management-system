@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, ChevronDown, User, LogOut } from 'lucide-react';
+import { Menu, ChevronDown, User, LogOut, Settings, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-interface HeaderProps {
+interface ManagerHeaderProps {
   onMenuClick: () => void;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function ManagerHeader({ onMenuClick }: ManagerHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -29,6 +29,9 @@ export function Header({ onMenuClick }: HeaderProps) {
     navigate('/');
   };
 
+  const displayName = user?.name || 'Manager';
+  const displayEmail = user?.email || 'manager@restaurant.com';
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-14 px-4 sm:px-6 bg-white border-b border-neutral-100">
       {/* Left */}
@@ -40,27 +43,47 @@ export function Header({ onMenuClick }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700">
+            <Shield className="h-3.5 w-3.5 text-neutral-600" />
+            <span>Restaurant Management</span>
+          </span>
+        </div>
       </div>
 
       {/* Right */}
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate('/manager/settings')}
+          className="p-2 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 cursor-pointer"
+          aria-label="Settings"
+          title="System Settings"
+        >
+          <Settings className="h-4 w-4" />
+        </button>
+
         {/* Profile dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-md hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-md hover:bg-neutral-50 transition-colors cursor-pointer"
             aria-expanded={dropdownOpen}
             aria-haspopup="true"
             aria-label="Account menu"
           >
-            <div className="h-7 w-7 rounded-full bg-neutral-100 flex items-center justify-center text-xs font-medium text-neutral-500">
-              {user?.name.charAt(0).toUpperCase()}
+            <div className="h-7 w-7 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-medium">
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-neutral-700 leading-none">{user?.name}</p>
-              <p className="text-[11px] text-neutral-400 leading-tight mt-0.5">{user?.email}</p>
+              <p className="text-sm font-medium text-neutral-700 leading-none">{displayName}</p>
+              <p className="text-[11px] text-neutral-400 leading-tight mt-0.5">{displayEmail}</p>
             </div>
-            <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-150 ${
+                dropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
           {dropdownOpen && (
@@ -70,15 +93,25 @@ export function Header({ onMenuClick }: HeaderProps) {
                   setDropdownOpen(false);
                   navigate('/manager/profile');
                 }}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50"
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 cursor-pointer"
               >
                 <User className="h-4 w-4" />
                 Profile
               </button>
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/manager/settings');
+                }}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50 cursor-pointer"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button>
               <div className="border-t border-neutral-100 my-1" />
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-error hover:bg-error-light/50"
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-error hover:bg-error-light/50 cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 Logout

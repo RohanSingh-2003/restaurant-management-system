@@ -9,9 +9,9 @@ interface RoleCardData {
 
 const roles: RoleCardData[] = [
   {
-    role: 'Manager',
+    role: 'Admin',
     description: 'Analytics, performance and business insights',
-    path: '/manager/login',
+    path: '/admin/login',
     available: true,
   },
   {
@@ -33,9 +33,9 @@ const roles: RoleCardData[] = [
     available: true,
   },
   {
-    role: 'Admin',
+    role: 'Manager',
     description: 'Users, staff, menu, tables and system administration',
-    path: '/admin/login',
+    path: '/manager/login',
     available: true,
   },
 ];

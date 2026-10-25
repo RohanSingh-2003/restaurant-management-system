@@ -2,23 +2,23 @@ import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../../components/ui/Card';
 import { Shield, CheckCircle2 } from 'lucide-react';
 
-export function AdminProfile() {
+export function ManagerProfile() {
   const { user, isAuthenticated } = useAuth();
 
-  const displayName = user?.name || 'System Administrator';
-  const displayEmail = user?.email || 'admin@restaurant.com';
-  const displayPhone = user?.phone || '+44 7911 999000';
-  const displayRole = 'System Administrator / Admin';
-  const privileges = 'Full System Access, User Management, Menu & Tables';
-  const authStatus = isAuthenticated ? 'Session Active (Root)' : 'Verified';
+  const displayName = user?.name || 'Manager';
+  const displayEmail = user?.email || 'manager@restaurant.com';
+  const displayPhone = user?.phone || '+44 7911 111222';
+  const displayRole = 'Manager';
+  const privileges = 'Restaurant Operations, Menu, Tables, Orders & Staff';
+  const authStatus = isAuthenticated ? 'Session Active' : 'Verified';
 
   return (
     <div className="space-y-6 max-w-4xl pb-12">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-semibold text-neutral-800 tracking-tight">Admin Profile</h1>
+        <h1 className="text-xl font-semibold text-neutral-800 tracking-tight">Manager Profile</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Administrator account credentials, system clearance and role permissions.
+          Manager account credentials, restaurant operations and role permissions.
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export function AdminProfile() {
           </div>
           <div className="p-3.5 rounded-lg bg-neutral-50 border border-neutral-100">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1">
-              Admin Email
+              Manager Email
             </span>
             <span className="text-sm font-semibold text-neutral-800 break-all font-mono">{displayEmail}</span>
           </div>

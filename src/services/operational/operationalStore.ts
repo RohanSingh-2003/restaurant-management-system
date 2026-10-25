@@ -9,6 +9,7 @@ import type {
   CustomerServiceRequest,
   CreateServiceRequestInput,
 } from '../../types/operational';
+import { appendOrderToDataset, updateOrderInDataset } from '../tarriDataService';
 
 const TABLES_STORAGE_KEY = 'rms_operational_tables';
 const ORDERS_STORAGE_KEY = 'rms_operational_orders';
@@ -72,7 +73,7 @@ function createInitialTables(): RestaurantTable[] {
       number: num,
       capacity,
       status: num === 5 || num === 6 ? 'Occupied' : 'Available',
-      currentOrderId: num === 5 ? 'ORD-1001' : num === 6 ? 'ORD-1002' : undefined,
+      currentOrderId: num === 5 ? 'RES_ORD_6322.0' : num === 6 ? 'RES_ORD_6323.0' : undefined,
     };
   });
 }
@@ -86,8 +87,8 @@ function createInitialOrders(): OperationalOrder[] {
 
   return [
     {
-      id: 'ORD-1001',
-      orderNumber: 'ORD-1001',
+      id: 'RES_ORD_6322.0',
+      orderNumber: 'RES_ORD_6322.0',
       tableId: 'T5',
       tableNumber: 5,
       source: 'WAITER',
@@ -121,8 +122,8 @@ function createInitialOrders(): OperationalOrder[] {
       specialInstructions: 'Customer requested fast service if possible.',
     },
     {
-      id: 'ORD-1002',
-      orderNumber: 'ORD-1002',
+      id: 'RES_ORD_6323.0',
+      orderNumber: 'RES_ORD_6323.0',
       tableId: 'T6',
       tableNumber: 6,
       source: 'WAITER',
@@ -155,8 +156,8 @@ function createInitialOrders(): OperationalOrder[] {
       specialInstructions: 'VIP Table guests.',
     },
     {
-      id: 'ORD-1000',
-      orderNumber: 'ORD-1000',
+      id: 'RES_ORD_6320.0',
+      orderNumber: 'RES_ORD_6320.0',
       tableId: 'T2',
       tableNumber: 2,
       source: 'WAITER',
@@ -328,7 +329,27 @@ export function getStoredOrders(): OperationalOrder[] {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(initial));
       return initial;
     }
-    return JSON.parse(raw) as OperationalOrder[];
+    const orders = JSON.parse(raw) as OperationalOrder[];
+    let migrated = false;
+    const cleaned = orders.map((o) => {
+      if (o.orderNumber && !o.orderNumber.startsWith('RES_ORD_')) {
+        const numMatch = String(o.orderNumber).match(/\d+/);
+        const num = numMatch ? parseInt(numMatch[0], 10) : 6325;
+        const newNum = num === 1003 ? 'RES_ORD_6325.0' : `RES_ORD_${num}.0`;
+        migrated = true;
+        return {
+          ...o,
+          id: newNum,
+          orderNumber: newNum,
+        };
+      }
+      return o;
+    });
+
+    if (migrated) {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return createInitialOrders();
   }
@@ -353,16 +374,17 @@ export function createOrder(input: CreateOrderInput): OperationalOrder {
   const orders = getStoredOrders();
   const tables = getStoredTables();
 
-  // Find next order number
+  // Find next order number matching dataset sequence (RES_ORD_<number>.0)
+  const BASE_MAX_ORDER_ID = 6325;
   const numericIds = orders
     .map((o) => {
-      const match = o.orderNumber.match(/\d+/);
-      return match ? parseInt(match[0], 10) : 1000;
+      const match = o.orderNumber.match(/RES_ORD_(\d+)/i) || o.orderNumber.match(/\d+/);
+      return match ? parseInt(match[1] || match[0], 10) : BASE_MAX_ORDER_ID;
     })
     .filter((n) => !isNaN(n));
-  const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 1000;
+  const maxId = numericIds.length > 0 ? Math.max(...numericIds, BASE_MAX_ORDER_ID) : BASE_MAX_ORDER_ID;
   const nextNum = maxId + 1;
-  const orderNumber = `ORD-${nextNum}`;
+  const orderNumber = `RES_ORD_${nextNum}.0`;
 
   const subtotal = input.items.reduce((acc, it) => acc + it.quantity * it.unitPrice, 0);
   const nowStr = new Date().toISOString();
@@ -399,6 +421,13 @@ export function createOrder(input: CreateOrderInput): OperationalOrder {
   // Save new order
   orders.unshift(newOrder);
   saveOrders(orders);
+
+  // Sync with warehouse dataset (tarri_data.csv & analytics)
+  try {
+    void appendOrderToDataset(newOrder);
+  } catch (err) {
+    console.warn('Failed to append order to dataset:', err);
+  }
 
   // Update table to Occupied
   const updatedTables = tables.map((t) =>
@@ -444,6 +473,15 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus): Oper
   orders[orderIdx] = updated;
   saveOrders(orders);
 
+  // If order was cancelled, sync cancellation flag to dataset
+  if (newStatus === 'Cancelled') {
+    try {
+      void updateOrderInDataset(orderId, { cancelled: true });
+    } catch (err) {
+      console.warn('Failed to update dataset order status:', err);
+    }
+  }
+
   return updated;
 }
 
@@ -476,6 +514,13 @@ export function payAndCompleteOrder(
 
   orders[orderIdx] = updatedOrder;
   saveOrders(orders);
+
+  // Sync payment method to dataset
+  try {
+    void updateOrderInDataset(orderId, { payment: method === 'Cash' ? 'Cash' : 'Card' });
+  } catch (err) {
+    console.warn('Failed to update dataset order payment:', err);
+  }
 
   // Table turnover step: mark table as 'Needs Reset' (not automatically Available)
   let updatedTable: RestaurantTable | undefined;
@@ -555,6 +600,14 @@ export function modifyOrder(
 
   orders[orderIdx] = updated;
   saveOrders(orders);
+
+  // Sync modified items and totals to dataset
+  try {
+    void appendOrderToDataset(updated);
+  } catch (err) {
+    console.warn('Failed to update modified order in dataset:', err);
+  }
+
   return updated;
 }
 

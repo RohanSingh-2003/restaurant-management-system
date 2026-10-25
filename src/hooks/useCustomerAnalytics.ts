@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CustomerBehaviourData } from '../types/dataset';
-import { loadDataset, getCustomerAnalytics } from '../services/tarriDataService';
+import { loadDataset, getCustomerAnalytics, subscribeDatasetUpdates } from '../services/tarriDataService';
 
 export function useCustomerAnalytics() {
   const [data, setData] = useState<CustomerBehaviourData | null>(null);
@@ -25,8 +25,20 @@ export function useCustomerAnalytics() {
         }
       });
 
+    const unsubscribe = subscribeDatasetUpdates(() => {
+      loadDataset(true)
+        .then((records) => {
+          if (isMounted) {
+            const analytics = getCustomerAnalytics(records);
+            setData(analytics);
+          }
+        })
+        .catch(() => {});
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [reloadCounter]);
 

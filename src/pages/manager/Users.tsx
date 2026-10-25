@@ -29,7 +29,7 @@ function getRoleBadge(role: Role) {
   }
 }
 
-export function AdminUsers() {
+export function ManagerUsers() {
   const [users, setUsers] = useState<User[]>(() => getStoredUsers());
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('All');
@@ -135,7 +135,7 @@ export function AdminUsers() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {['All', 'Manager', 'Waiter', 'Cook', 'Customer', 'Admin'].map((r) => (
+          {['All', 'Admin', 'Waiter', 'Cook', 'Customer', 'Manager'].map((r) => (
             <button
               key={r}
               onClick={() => setRoleFilter(r)}

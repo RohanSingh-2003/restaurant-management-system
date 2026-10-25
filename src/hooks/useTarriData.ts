@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { TarriRecord, DashboardMetrics } from '../types/dataset';
-import { loadDataset, calculateDashboardMetrics } from '../services/tarriDataService';
+import { loadDataset, calculateDashboardMetrics, subscribeDatasetUpdates } from '../services/tarriDataService';
 
 export function useTarriData() {
   const [records, setRecords] = useState<TarriRecord[]>([]);
@@ -24,8 +24,19 @@ export function useTarriData() {
         }
       });
 
+    const unsubscribe = subscribeDatasetUpdates(() => {
+      loadDataset(true)
+        .then((data) => {
+          if (isMounted) {
+            setRecords(data);
+          }
+        })
+        .catch(() => {});
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [reloadCounter]);
 

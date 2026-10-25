@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { SalesAnalyticsData } from '../types/dataset';
-import { loadDataset, getSalesAnalytics } from '../services/tarriDataService';
+import { loadDataset, getSalesAnalytics, subscribeDatasetUpdates } from '../services/tarriDataService';
 
 export function useSalesAnalytics() {
   const [data, setData] = useState<SalesAnalyticsData | null>(null);
@@ -25,8 +25,20 @@ export function useSalesAnalytics() {
         }
       });
 
+    const unsubscribe = subscribeDatasetUpdates(() => {
+      loadDataset(true)
+        .then((records) => {
+          if (isMounted) {
+            const analytics = getSalesAnalytics(records);
+            setData(analytics);
+          }
+        })
+        .catch(() => {});
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [reloadCounter]);
 
